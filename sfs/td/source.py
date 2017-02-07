@@ -24,12 +24,13 @@ The Green's function describes the spatial sound propagation over time.
 
 """
 import numpy as _np
+from scipy.interpolate import interp1d as _interp1d
 
 from .. import default as _default
 from .. import util as _util
 
 
-def point(xs, signal, observation_time, grid, c=None):
+def point(xs, signal, observation_time, grid, c=None, interpolator_kind='linear'):
     r"""Source model for a point source: 3D Green's function.
 
     Calculates the scalar sound pressure field for a given point in
@@ -75,6 +76,7 @@ def point(xs, signal, observation_time, grid, c=None):
     xs = _util.asarray_1d(xs)
     data, samplerate, signal_offset = _util.as_delayed_signal(signal)
     data = _util.asarray_1d(data)
+    observation_time = _util.asarray_1d(observation_time)
     grid = _util.as_xyz_components(grid)
     if c is None:
         c = _default.c
@@ -84,12 +86,46 @@ def point(xs, signal, observation_time, grid, c=None):
         weights = 1 / (4 * _np.pi * r)
     delays = r / c
     base_time = observation_time - signal_offset
-    points_at_time = _np.interp(base_time - delays,
-                               _np.arange(len(data)) / samplerate,
-                               data, left=0, right=0)
+    if interpolator_kind == 'sinc':
+        p = _sinc_interp(data, _np.arange(len(data)),
+                         _np.array((base_time - delays) * samplerate))
+    else:
+        interpolator = _interp1d(_np.arange(len(data)), data,
+                                kind=interpolator_kind, bounds_error=False,
+                                fill_value=0)
+        p = interpolator((base_time - delays) * samplerate)
     # weights can be +-infinity
     with _np.errstate(invalid='ignore'):
-        return weights * points_at_time
+        return weights * p
+
+
+def _sinc_interp(x, s, u):
+    """
+    Ideal sinc interpolation of a signal
+    adapted from https://gist.github.com/endolith/1297227
+
+    Parameters
+    ----------
+    x : (N,) array_like
+        Signal to be interpolated.
+    s : (N,) array_like
+        Sampling instants of signal.
+    u : (N,) array_like
+        Sampling instants after interpolation.
+
+    Returns
+    -------
+    numpy.ndarray
+        Interpolated signal
+    """
+
+    # sampling period
+    T = s[1] - s[0]
+    # perform sinc interpolation
+    sincM = _np.tile(u, (len(s), 1)) - _np.tile(s[:, _np.newaxis], (1, len(u)))
+    y = _np.dot(x, _np.sinc(sincM/T))
+
+    return y
 
 
 def point_image_sources(x0, signal, observation_time, grid, L, max_order,
