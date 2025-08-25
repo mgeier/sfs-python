@@ -22,6 +22,11 @@ Documentation = "https://sfs-python.readthedocs.io/"
 Repository = "https://github.com/sfstoolbox/sfs-python"
 Issues = "https://github.com/sfstoolbox/sfs-python/issues"
 
+[dependency-groups]
+dev = [
+    "ruff>=0.12.10",
+]
+
 [tool.setuptools.packages.find]
 include = ["sfs*"]
 
