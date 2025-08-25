@@ -23,9 +23,7 @@ Repository = "https://github.com/sfstoolbox/sfs-python"
 Issues = "https://github.com/sfstoolbox/sfs-python/issues"
 
 [dependency-groups]
-dev = [
-    "ruff>=0.12.10",
-]
+dev = ["ruff>=0.12.10"]
 
 [tool.setuptools.packages.find]
 include = ["sfs*"]
@@ -33,5 +31,18 @@ include = ["sfs*"]
 [tool.setuptools.dynamic]
 version = { attr = "sfs.__version__" }
 
+[tool.ruff]
+line-length = 79
+
 [tool.ruff.format]
+docstring-code-format = true
 quote-style = "single"
+
+[tool.ruff.lint]
+extend-select = [
+    "UP", # pyupgrade
+    #"D",  # pydocstyle
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
