@@ -32,3 +32,6 @@ include = ["sfs*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "sfs.__version__" }
+
+[tool.ruff.format]
+quote-style = "single"
