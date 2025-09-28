@@ -103,7 +103,7 @@ def point(xs, signal, observation_time, grid, c=None,
     xs = _util.asarray_1d(xs)
     data, samplerate, signal_offset = _util.as_delayed_signal(signal)
     data = _util.asarray_1d(data)
-    observation_time = _util.asarray_1d(observation_time)
+    observation_time = _np.asarray(observation_time)
     grid = _util.as_xyz_components(grid)
     if c is None:
         c = _default.c
@@ -113,7 +113,11 @@ def point(xs, signal, observation_time, grid, c=None,
         weights = 1 / (4 * _np.pi * r)
     delays = r / c
     base_time = observation_time - signal_offset
-    p = interpolator(_np.arange(len(data)), data)((base_time - delays) * samplerate)
+    # We shift the time dimension(s) to the left.
+    #t = base_time[..., *[_np.newaxis] * delays.ndim] - delays
+    t = base_time.reshape(base_time.shape + (1,) * delays.ndim) - delays
+    p = interpolator(_np.arange(len(data)), data)(t * samplerate)
+    #p = interpolator(_np.arange(len(data)) / samplerate, data)(t)
     # weights can be +-infinity
     with _np.errstate(invalid='ignore'):
         return weights * p

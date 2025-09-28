@@ -17,4 +17,5 @@ Examples
     examples/modal-room-acoustics
     examples/mirror-image-source-model
     examples/animations-pulsating-sphere
+    examples/record-audio-data
     example-python-scripts
