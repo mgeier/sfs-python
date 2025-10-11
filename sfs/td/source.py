@@ -132,6 +132,36 @@ def sinc_interpolator(x, y):
     return f
 
 
+def sinc_interpolator_mg(x, y):
+    x = _util.asarray_1d(x)
+    y = _util.asarray_1d(y)
+    # Equidistant sampling of input is assumed.
+    delta = x[1] - x[0]
+
+    def interpolate(xnew):
+        return sum(y * _np.sinc((xnew - x) / delta) for x, y in zip(x, y))
+
+    return interpolate
+
+
+# endolith
+def sinc_sascha(x, s, u):
+    # sampling period
+    T = s[1] - s[0]
+    # perform sinc interpolation
+    sincM = _np.tile(u, (len(s), 1)) - _np.tile(s[:, _np.newaxis], (1, len(u)))
+    #sincM = u - s[:, None]
+    y = _np.dot(x, _np.sinc(sincM/T))
+    return y
+
+
+# https://gist.github.com/fschwar4/eb462151da065178144d53fe65e8c9fc
+def sinc_fschwar4(x, s, u):
+    sinc_ = _np.sinc((u - s[:, None])/(s[1]-s[0]))
+    return _np.dot(x, sinc_)
+
+
+
 def point_image_sources(x0, signal, observation_time, grid, L, max_order,
                         coeffs=None, c=None):
     """Point source in a rectangular room using the mirror image source model.

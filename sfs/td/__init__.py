@@ -16,7 +16,7 @@ from .. import array as _array
 from .. import util as _util
 
 
-def synthesize(signals, weights, ssd, secondary_source_function, **kwargs):
+def synthesize(signals, delays, weights, ssd, secondary_source_function, **kwargs):
     """Compute sound field for an array of secondary sources.
 
     Parameters
@@ -25,9 +25,11 @@ def synthesize(signals, weights, ssd, secondary_source_function, **kwargs):
         Driving signals consisting of audio data (C channels) and a
         sampling rate (in Hertz).
         A `DelayedSignal` object can also be used.
+    delays : (C,) array_like
+        Additional per-channel delays, e.g. from a driving function.
     weights : (C,) array_like
-        Additional weights applied during integration, e.g. source
-        selection and tapering.
+        Per-channel weights applied during integration, e.g. from a driving
+        function, source selection and tapering.
     ssd : sequence of between 1 and 3 array_like objects
         Positions (shape ``(C, 3)``), normal vectors (shape ``(C, 3)``)
         and weights (shape ``(C,)``) of secondary sources.
@@ -51,17 +53,22 @@ def synthesize(signals, weights, ssd, secondary_source_function, **kwargs):
 
     """
     ssd = _array.as_secondary_source_distribution(ssd)
+    N = len(ssd.x)
+    if len(ssd.n) != N:
+        raise ValueError("Length mismatch")
     data, samplerate, signal_offset = _util.as_delayed_signal(signals)
+    data = _np.broadcast_to(data, (len(data), N))
+    delays = _util.asarray_1d(delays)
     weights = _util.asarray_1d(weights)
     channels = data.T
     if not (len(ssd.x) == len(ssd.n) == len(ssd.a) == len(channels) ==
-            len(weights)):
+            len(delays) == len(weights)):
         raise ValueError("Length mismatch")
     p = 0
-    for x, n, a, channel, weight in zip(ssd.x, ssd.n, ssd.a,
-                                        channels, weights):
+    for x, n, a, channel, delay, weight in zip(
+            ssd.x, ssd.n, ssd.a, channels, delays, weights):
         if weight != 0:
-            signal = channel, samplerate, signal_offset
+            signal = channel, samplerate, signal_offset + delay
             p += a * weight * secondary_source_function(x, n, signal, **kwargs)
     return p
 

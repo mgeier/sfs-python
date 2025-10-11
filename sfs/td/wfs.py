@@ -424,5 +424,14 @@ def driving_signals(delays, weights, signal):
     """
     delays = _util.asarray_1d(delays)
     weights = _util.asarray_1d(weights)
-    data, samplerate, signal_offset = _apply_delays(signal, delays)
-    return _util.DelayedSignal(data * weights, samplerate, signal_offset)
+
+    data, samplerate, initial_offset = _util.as_delayed_signal(signal)
+
+    data = _util.asarray_1d(data)
+
+    delays += initial_offset
+
+    # TODO: if there is more than 1 delay, check that data has same number of
+    # channels (or mono)? if mono, broadcast?
+
+    return _util.DelayedSignal(data * weights, samplerate, delays)
